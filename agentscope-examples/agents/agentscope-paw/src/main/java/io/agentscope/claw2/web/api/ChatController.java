@@ -65,6 +65,24 @@ import reactor.core.publisher.Sinks;
  * <p>Each agent has a single per-process session keyed by its id. Slash commands {@code /new} and
  * {@code /reset} clear the conversation history before the agent is invoked.
  */
+/**
+ * 【学习注释：将本地 HarnessAgent 转成前端可消费的 SSE 对话】
+ *
+ * <p>控制器把 Agent 回复包装为 {@code token / tool_call / tool_result / done / error} 五类 SSE
+ * 帧。工具事件来自 ToolEventBus，文本回复由 ChatUiChannel/Gateway 完成后输出；两条 Flux 合并，
+ * 因此前端能在最终文本前看到正在调用什么工具。
+ *
+ * <pre>
+ * POST .../stream
+ *        ├── /new、/reset 等本地命令：直接返回合成事件
+ *        └── 普通文本 ──► Gateway 执行 Agent
+ *                           ├── ToolEventBus → tool_call/tool_result
+ *                           └── reply        → token → done
+ * </pre>
+ *
+ * <p>本地版按 agentId 管理单个会话；DataAgent 的 Controller 则额外加入 userId 与
+ * conversationId。对比这两个文件可直观看出单用户与多租户会话设计的差别。
+ */
 @RestController
 @RequestMapping("/api/agents/{agentId}/chat")
 public class ChatController {

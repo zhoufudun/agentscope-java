@@ -80,6 +80,24 @@ import org.slf4j.LoggerFactory;
  *   <li>{@link #start()} — initialize and start all pre-registered channel adapters.
  * </ol>
  */
+/**
+ * 【学习注释：Claw 工作台的 Agent 装配器】
+ *
+ * <p>ClawBootstrap 是本地工作台的 composition root。它从 {@code clawHome} 下读取配置，再把
+ * Agent 定义、工作区、技能、通道和会话编排器组装为可运行 Gateway。
+ *
+ * <pre>
+ * clawHome/agentscope.json
+ *           │
+ *           ▼
+ * Builder ──► HarnessAgent（每个 agentId 独立 workspace）
+ *      ├── SessionAgentManager ──► 主会话 / 子会话 / 任务
+ *      └── HarnessGateway ───────► ChatUiChannel 与外部 Channel
+ * </pre>
+ *
+ * <p>与普通 ReActAgent.Builder 相比，这里把应用级“多 Agent 注册与生命周期”抽成稳定 API，
+ * 因此 Web 控制器不需要自行构造 Agent。
+ */
 public final class ClawBootstrap implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(ClawBootstrap.class);

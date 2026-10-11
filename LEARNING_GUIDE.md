@@ -322,6 +322,36 @@ agent.streamEvents("Summarize today.", ctx)
 | `StructuredOutputFallbackExample.java` | 结构化输出降级 |
 | `RoutingByToolCallsExample.java` | 工具调用路由模式 |
 
+### 7.4 完整应用案例（AG-UI、CodingAgent、DataAgent）
+
+这一组不再只是演示单个 API，而是展示如何把 `HarnessAgent` 放进真实服务：从 HTTP/SSE 或 IM
+通道接收请求，经过会话隔离、网关调度、工具与中间件，最终把结果交还给前端。
+
+| 文件 | 推荐学习重点 |
+|-----|-------------|
+| `agentscope-examples/agui/.../AguiExampleApplication.java` | Spring Boot 如何暴露 AG-UI 服务 |
+| `agentscope-examples/agui/.../AgentConfiguration.java` | 多 Agent 工厂注册、AgentEvent 到 AG-UI 事件转换 |
+| `agentscope-examples/agui/.../ExampleTools.java` | `ToolEmitter` 进度事件与最终工具结果的分工 |
+| `agentscope-examples/agents/agentscope-codingagent/.../CodingBootstrap.java` | 多 Agent、Gateway 与 Channel 的应用装配 |
+| `.../CodingAgentFactory.java` | 模型回退、Docker 会话隔离、压缩策略的集中配置 |
+| `.../ThreadBudgetMiddleware.java` | 按会话限制模型调用次数 |
+| `.../RunDispatcher.java` | Webhook/CLI 输入转 Gateway 调度、ThreadLocal 清理、排队 |
+| `agentscope-examples/agents/agentscope-dataagent/.../DataAgentBootstrap.java` | 多租户 DataAgent 的配置与运行时装配 |
+| `.../SessionAgentManager.java` | 会话、子 Agent、锁和并发通道的编排 |
+| `.../ChatController.java` | 认证、权限、会话 ID 与 SSE 流式接口 |
+
+`agentscope-paw` 也已补充关键入口注释：
+
+| 文件 | 推荐学习重点 |
+|-----|-------------|
+| `agentscope-examples/agents/agentscope-paw/.../Claw2App.java` | 本地单用户 Agent 工作台入口 |
+| `.../ClawBootstrap.java` | 多 Agent、工作区、Channel 的本地装配 |
+| `.../runtime/session/SessionAgentManager.java` | 会话锁、子 Agent 并发与完成通知 |
+| `.../web/api/ChatController.java` | SSE 帧合并与本地斜杠命令 |
+
+建议按 AG-UI → CodingAgent → PAW → DataAgent 的顺序阅读：先理解协议转换，再理解专用
+编码 Agent、单用户工作台，最后进入多租户、会话化的产品级实现。
+
 ## 八、学习路径建议
 
 1. **入门阶段**

@@ -35,6 +35,23 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * isolation. All persistent state lives under {@code ${claw.home}} (default
  * {@code ~/.agentscope/claw}).
  */
+/**
+ * 【学习注释：本地单用户 Agent 工作台入口】
+ *
+ * <p>PAW/Claw2 演示的是“个人 Agent 工作台”形态：一个本地 WebFlux 服务同时承载 Agent 管理、
+ * 工作区编辑、SSE 聊天和前端静态资源。与 DataAgent 的多租户方案不同，它省略认证与用户隔离，
+ * 将数据统一放在 {@code claw.home}。
+ *
+ * <pre>
+ * React SPA ──► /api/agents/** ──► ChatController / Catalog / Workspace API
+ *                                      │
+ *                                      ▼
+ *                               ClawBootstrap ──► HarnessAgent
+ * </pre>
+ *
+ * <p>它适合学习“本地优先”部署：先读此入口，再读 ClawBootstrap 和 ChatController，最后比较
+ * DataAgent 对认证、多用户会话所增加的层次。
+ */
 @SpringBootApplication
 public class Claw2App {
     public static void main(String[] args) {

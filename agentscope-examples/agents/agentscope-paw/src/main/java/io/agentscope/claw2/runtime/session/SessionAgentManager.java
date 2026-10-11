@@ -65,6 +65,22 @@ import reactor.core.publisher.Mono;
  * <p>Used by {@link SessionsTool} and {@link
  * io.agentscope.claw2.runtime.gateway.HarnessGateway} when the full orchestration stack is active.
  */
+/**
+ * 【学习注释：本地工作台中的会话与子 Agent 并发模型】
+ *
+ * <p>该实现与 DataAgent 的 SessionAgentManager 同源，但服务对象是单用户本地工作台。它仍需要
+ * 同会话锁、子 Agent 并发信号量和待通知队列，因为单个用户也可能同时启动多个子任务。
+ *
+ * <pre>
+ * agent_spawn ──► registerSession ──► SessionEntry + parent/child 索引
+ *                                          │
+ * 用户输入 ──► execute ──► per-session Lock ──► DefaultAgentManager.invokeAgent
+ * 子任务完成 ───────────────────────────────► AnnounceDispatcher / pending 队列
+ * </pre>
+ *
+ * <p>关注两个边界：Lock 保证一个会话的上下文不会被并发写坏；Semaphore 控制不同会话的子任务
+ * 总数，防止本地机器被递归 spawn 耗尽资源。
+ */
 public class SessionAgentManager {
 
     private static final Logger log = LoggerFactory.getLogger(SessionAgentManager.class);
