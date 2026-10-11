@@ -65,6 +65,25 @@ import reactor.core.publisher.Mono;
  * <p>Used by {@link SessionsTool} and {@link
  * io.agentscope.dataagent.runtime.gateway.HarnessGateway} when the full orchestration stack is active.
  */
+/**
+ * 【学习注释：完整多 Agent 应用的会话编排器】
+ *
+ * <p>Harness 的 AgentState 保存“某个 Agent 的对话内容”；本类额外管理“产品层会话”：标签到
+ * sessionKey 的索引、父子 Agent 关系、存活 Agent 缓存、并发通道、子任务完成通知和持久化元数据。
+ *
+ * <pre>
+ * 请求 sessionKey
+ *       │
+ *       ├── sessionsByKey / labelToSessionKey ──► SessionEntry
+ *       ├── locksBySessionKey                  ──► 同一会话串行，防止上下文竞争
+ *       ├── subagentLane / nestedLane          ──► Semaphore 限制全局并发
+ *       └── DefaultAgentManager                ──► 创建并执行实际 Agent
+ * </pre>
+ *
+ * <p>这里采用“同会话串行、不同会话并行”的模型。子 Agent 结束后的结果先经
+ * {@code AnnounceDispatcher} 交付；若即时交付不可用，进入 {@code pendingByRequester}，等待
+ * 父会话下一轮读取。这避免后台任务完成时丢失通知。
+ */
 public class SessionAgentManager {
 
     private static final Logger log = LoggerFactory.getLogger(SessionAgentManager.class);

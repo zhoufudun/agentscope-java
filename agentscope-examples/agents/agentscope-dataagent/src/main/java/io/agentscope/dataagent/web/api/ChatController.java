@@ -72,6 +72,25 @@ import reactor.core.publisher.Sinks;
  * the {@link MsgContext#canonicalKey()}). Slash commands {@code /new}, {@code /reset},
  * {@code /identity}, and {@code /dock_<channel> <id>} are intercepted before the agent is invoked.
  */
+/**
+ * 【学习注释：把多租户 Agent 对话暴露为 HTTP 与 SSE】
+ *
+ * <p>Controller 在调用 Agent 前完成四件事：认证身份提取、运行权限校验、外部 conversationId
+ * 归一化、以及会话活动记录。内部储存 key 可能与前端 conversationId 不同，所以响应必须回显
+ * 前端 ID，避免前端把内部 key 当成下一轮会话 ID 而拆分对话。
+ *
+ * <pre>
+ * POST /api/agents/{agentId}/chat/stream
+ *       │
+ *       ├── Authentication + AgentAccessGuard
+ *       ├── (userId, agentId, conversationId) → gateKey / 内部 sessionKey
+ *       ├── ToolEventBus 订阅工具事件
+ *       └── ChatUiChannel 调 Agent ──► SSE: tool_call → token → done
+ * </pre>
+ *
+ * <p>{@code /new}、{@code /reset} 等斜杠命令在此层短路，不应送给模型消耗 token；而普通请求由
+ * {@code executeChat} 进入 Gateway。该分层也是把产品命令与 LLM 自然语言命令分开的常见方式。
+ */
 @RestController
 @RequestMapping("/api/agents/{agentId}/chat")
 public class ChatController {

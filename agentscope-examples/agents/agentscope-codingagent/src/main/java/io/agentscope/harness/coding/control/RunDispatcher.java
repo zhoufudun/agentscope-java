@@ -41,6 +41,27 @@ import reactor.core.scheduler.Schedulers;
  *       next reasoning step by {@link MessageQueueMiddleware}
  * </ul>
  */
+/**
+ * 【学习注释：把外部输入安全地接入并发 Agent 运行】
+ *
+ * <p>Dispatcher 是 Webhook/CLI 与 Gateway 的边界。它先把文本转换为 USER 消息，再把
+ * threadId 放进 MsgContext；Gateway 据此找到目标 Agent，并用 threadId 作为会话分片依据。
+ *
+ * <pre>
+ * 外部事件 / CLI 输入
+ *       │
+ *       ▼
+ * Msg(USER) + MsgContext(threadId, userId, agentId)
+ *       │                         │
+ *       │                         └── ThreadLocal：供 MessageQueueMiddleware 读取
+ *       ▼
+ * Gateway.run() ──► HarnessAgent ──► 事件与工具循环
+ * </pre>
+ *
+ * <p>调度移到 {@code boundedElastic}，避免阻塞事件循环线程；finally 块必须移除 ThreadLocal，
+ * 否则复用线程可能把上一次会话 ID 泄漏到另一请求。{@code enqueue} 用于繁忙会话后的消息排队，
+ * 由 MessageQueueMiddleware 在下一推理阶段注入。
+ */
 public class RunDispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(RunDispatcher.class);

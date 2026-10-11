@@ -30,6 +30,25 @@ import java.util.Random;
  * <p>These tools demonstrate how to create tool functions that can be called
  * by the agent during conversation.
  */
+/**
+ * 【学习注释：面向 AG-UI 的普通工具与进度事件】
+ *
+ * <p>AG-UI 不要求工具使用特殊接口：带 {@code @Tool} 的普通 Java 方法仍由 Toolkit 注册，
+ * 模型仅能看到 {@code @ToolParam} 所描述的业务参数。{@code ToolEmitter} 不是模型参数，
+ * 而是框架在调用工具时注入的“进度通道”。
+ *
+ * <pre>
+ * 模型选择 get_weather(city)
+ *       │
+ *       ▼
+ * Toolkit 调用 Java 方法 ──► emitter.emit(...) ──► ToolResult*DeltaEvent ──► 前端进度
+ *       │
+ *       └──────────────────► return ToolResultBlock ───────────────────────► 给模型的最终结果
+ * </pre>
+ *
+ * <p>因此，{@code emit} 适合状态、日志和进度，{@code return} 才是模型应依据的最终事实。
+ * 示例中的天气数据和表达式解析器仅用于演示工具协议，生产环境应替换为经过校验的服务调用。
+ */
 public class ExampleTools {
 
     private final Random random = new Random();

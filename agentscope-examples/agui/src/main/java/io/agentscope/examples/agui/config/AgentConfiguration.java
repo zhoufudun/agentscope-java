@@ -52,6 +52,27 @@ import reactor.core.publisher.Flux;
  *   <li>Request body: {@code forwardedProps.agentId}</li>
  * </ul>
  */
+/**
+ * 【学习注释：AG-UI 的 Agent 注册、事件转换与事件增强】
+ *
+ * <p>这里使用“工厂注册”而非预先创建单例 Agent。每个请求经 {@code registerFactory} 得到一个
+ * 新 Agent，避免并发请求共享可变运行状态；会话连续性应交给请求中的 threadId 和配置的
+ * StateStore 管理。
+ *
+ * <pre>
+ * AG-UI 请求携带 agentId
+ *       │
+ *       ▼
+ * AguiAgentRegistry ──► factory(agentId) ──► ReActAgent
+ *       │                                      │ AgentEvent
+ *       │                                      ▼
+ *       └── AgentEventConverter ──► AguiEvent ──► AguiEventEnricher ──► SSE
+ * </pre>
+ *
+ * <p>{@code AgentEventConverter} 负责某一种 AgentEvent 的语义映射，例如把业务
+ * {@code CustomEvent} 变为前端认识的自定义事件；{@code AguiEventEnricher} 则在所有输出
+ * 事件上补齐时间戳、原始事件等公共字段。前者改变事件类型，后者补充事件元数据。
+ */
 @Configuration
 public class AgentConfiguration {
 

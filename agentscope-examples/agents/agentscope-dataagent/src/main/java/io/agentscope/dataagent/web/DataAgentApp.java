@@ -33,6 +33,25 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>This class is intentionally minimal — all wiring lives in the {@code runtime/}
  * and {@code web/} packages and is picked up via component scanning.
  */
+/**
+ * 【学习注释：DataAgent 的 Spring Boot 入口】
+ *
+ * <p>DataAgent 是“完整产品”案例：同一服务进程包含 React 静态页面、REST/SSE 接口、会话管理、
+ * Agent 市场和多租户工作空间。入口刻意保持极薄，具体职责交由 Spring 组件扫描出的 runtime 和 web
+ * 层完成。
+ *
+ * <pre>
+ * 浏览器 SPA / Webhook
+ *       │
+ *       ▼
+ * Controller ──► DataAgentBootstrap ──► HarnessAgent ──► 数据工具与工作空间
+ *       │                 │
+ *       └── SSE / JSON    └── SessionAgentManager（会话、子 Agent、并发控制）
+ * </pre>
+ *
+ * <p>阅读完整应用时从入口跳到 {@code DataAgentConfig} 和 {@code ChatController}；不要把这个
+ * 类误认为业务装配处，它只确定扫描边界。
+ */
 @SpringBootApplication(scanBasePackages = "io.agentscope.dataagent")
 public class DataAgentApp {
 

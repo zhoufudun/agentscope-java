@@ -84,6 +84,26 @@ import org.slf4j.LoggerFactory;
  *   <li>{@link #start()} — initialize and start all pre-registered channel adapters.
  * </ol>
  */
+/**
+ * 【学习注释：CodingAgent 的应用装配根】
+ *
+ * <p>这是完整应用的 composition root：Builder 读取应用配置、构造多个 HarnessAgent、共享会话
+ * 管理器和 Gateway，并在最后连接 ChatUI、钉钉或飞书等 Channel。它把“定义 Agent”与
+ * “启动消息入口”分开，便于测试和嵌入其他宿主程序。
+ *
+ * <pre>
+ * agentscope.json + Builder 配置
+ *              │
+ *              ▼
+ * CodingBootstrap.Builder
+ *   ├── CodingAgentFactory / ReviewerAgentFactory → HarnessAgent
+ *   ├── SessionAgentManager                       → 会话级 Agent 生命周期
+ *   └── HarnessGateway                            → ChannelManager → Channel
+ * </pre>
+ *
+ * <p>{@code chatUiChannel()} 适合 CLI、测试或应用内 UI，立即可用；{@code start()} 才负责启动
+ * 预注册的外部通道。学习时可先从 Builder 的 {@code build()} 往下追踪，理解依赖如何汇合。
+ */
 public final class CodingBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(CodingBootstrap.class);

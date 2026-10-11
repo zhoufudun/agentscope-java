@@ -75,6 +75,26 @@ import org.slf4j.LoggerFactory;
  *   <li>{@link #start()} — initialize and start all pre-registered channel adapters.
  * </ol>
  */
+/**
+ * 【学习注释：DataAgent 的运行时装配中心】
+ *
+ * <p>它与 CodingBootstrap 体现了可复用的 Harness 应用模式：将 JSON 配置与代码配置合并，创建
+ * 多个 HarnessAgent，并把 Channel、Gateway、SessionsTool 和 SessionAgentManager 接在同一
+ * 调度骨架上。
+ *
+ * <pre>
+ * ~/.agentscope/dataagent/agentscope.json
+ *                 │
+ *                 ▼
+ * DataAgentBootstrap.Builder
+ *   ├── agent 定义 / skill 仓库 / workspace ──► HarnessAgent 集合
+ *   ├── SessionAgentManager                  ──► 子 Agent 生命周期与会话元数据
+ *   └── HarnessGateway + ChannelManager      ──► ChatUI、Webhook、IM 通道
+ * </pre>
+ *
+ * <p>一个关键设计是默认路径固定在 {@code ~/.agentscope/dataagent}，而非 JVM 当前目录；这让
+ * 多个不同类型的 Agent 应用不会因共享工作区或旧配置发生状态串扰。
+ */
 public final class DataAgentBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(DataAgentBootstrap.class);

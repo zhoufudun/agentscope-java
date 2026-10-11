@@ -36,6 +36,24 @@ import reactor.core.publisher.Flux;
  *
  * <p>The new per-thread budget concept.
  */
+/**
+ * 【学习注释：为何预算按 threadId 而不是按 Agent 实例计算】
+ *
+ * <p>一个 CodingAgent 实例可以服务多个会话。若把计数器放在 Agent 全局，会出现某位用户耗尽
+ * 预算后影响其他用户的错误；此中间件以 {@code CURRENT_THREAD_ID} 为键保存 AtomicLong，
+ * 让限制与一次外部会话绑定。
+ *
+ * <pre>
+ * onReasoning()
+ *   │
+ *   ├─ 无 threadId：直接 next，保持普通 Agent 行为
+ *   └─ 有 threadId：计数 +1 ──► 未超限：next.apply(input)
+ *                               └► 已超限：Flux.error，终止本轮执行
+ * </pre>
+ *
+ * <p>它拦在 {@code onReasoning}，因此限制的是模型调用次数，而不是工具次数。任务完成、会话
+ * 重置或管理员清理时，应调用 {@code resetThread} 回收对应计数。
+ */
 public class ThreadBudgetMiddleware implements MiddlewareBase {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadBudgetMiddleware.class);

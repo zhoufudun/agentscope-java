@@ -40,6 +40,23 @@ import java.nio.file.Path;
  *   <li>Sandbox integration wired at phase 2
  * </ul>
  */
+/**
+ * 【学习注释：把编码 Agent 的可变部署策略集中在工厂中】
+ *
+ * <p>工厂负责把工作空间、工具集、系统提示词、模型、上下文压缩和可选沙箱拼成一个
+ * HarnessAgent。业务代码不必知道具体模型提供商或容器细节，只依赖返回的 Agent。
+ *
+ * <pre>
+ * 环境变量                 工厂决策
+ * CODING_MODEL_ID   ──► 主模型（DashScope / OpenAI / Anthropic）
+ * FALLBACK_MODEL_ID ──► FallbackModel：可重试故障时切换备用模型
+ * SANDBOX_TYPE      ──► DockerFilesystemSpec（SESSION 隔离）
+ * CODING_MAX_ITERS  ──► ReAct 最大推理-行动轮次
+ * </pre>
+ *
+ * <p>这里选用 {@code IsolationScope.SESSION}，意味着不同会话不会共享容器中的运行文件。
+ * {@code CompactionConfig} 则限制长任务的历史长度，并先把可保留事实写入长期记忆。
+ */
 public final class CodingAgentFactory {
 
     private CodingAgentFactory() {}

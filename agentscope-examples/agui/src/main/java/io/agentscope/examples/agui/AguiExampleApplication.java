@@ -32,6 +32,25 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *   <li>Or use curl: curl -X POST http://localhost:8080/agui/run -H "Content-Type: application/json" -d '{"threadId":"test","runId":"1","messages":[{"id":"m1","role":"user","content":"Hello!"}]}'</li>
  * </ol>
  */
+/**
+ * 【学习注释：AG-UI 服务的最小启动入口】
+ *
+ * <p>此类本身不创建 Agent；Spring Boot 启动后会扫描配置类，并由 AG-UI Starter 暴露
+ * {@code /agui/run} 流式接口。请求所带的 {@code threadId} 是客户端会话标识，
+ * {@code runId} 是本次执行标识；前端据此把连续事件归并为同一轮对话。
+ *
+ * <pre>
+ * 浏览器 / AG-UI 前端
+ *        │ POST /agui/run
+ *        ▼
+ * Spring WebFlux + AG-UI Starter ──► AgentConfiguration 中注册的 Agent 工厂
+ *        │                                  │
+ *        └──────── SSE / 事件流 ◄────────── ReActAgent.streamEvents()
+ * </pre>
+ *
+ * <p>学习顺序：先运行此入口观察协议事件，再阅读 {@code AgentConfiguration}，理解
+ * 如何按 agentId 构建不同 Agent，以及如何把 AgentScope 的事件转成 AG-UI 事件。
+ */
 @SpringBootApplication
 public class AguiExampleApplication {
 
