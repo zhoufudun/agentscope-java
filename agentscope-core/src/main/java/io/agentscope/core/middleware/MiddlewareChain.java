@@ -13,6 +13,93 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】MiddlewareChain - 中间件链（洋葱模型）
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * MiddlewareChain 将多个中间件组装成"洋葱"结构。
+ * 请求从外向内穿透，响应从内向外返回。
+ *
+ * 二、洋葱模型图解
+ * ---------------
+ *        请求进入
+ *            │
+ *   ┌────────▼────────┐
+ *   │   中间件 1       │  ← 外层（先执行前置逻辑）
+ *   │ ┌──────────────┐│
+ *   │ │  中间件 2    ││
+ *   │ │ ┌──────────┐ ││
+ *   │ │ │ 中间件 3 │ ││
+ *   │ │ │ ┌──────┐ │ ││
+ *   │ │ │ │ 核心 │ │ ││  ← 最内层（实际逻辑）
+ *   │ │ │ └──────┘ │ ││
+ *   │ │ └──────────┘ ││
+ *   │ └──────────────┘│
+ *   └─────────────────┘
+ *            │
+ *        响应返回
+ *
+ * 三、五个拦截点
+ * -------------
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │  onAgent       — 整个代理调用                       │
+ *   │  onReasoning   — LLM 推理阶段                       │
+ *   │  onActing      — 工具执行阶段                       │
+ *   │  onModelCall   — 单次 LLM API 调用                  │
+ *   │  onSystemPrompt — 系统提示生成                      │
+ *   └─────────────────────────────────────────────────────┘
+ *
+ * 四、执行顺序
+ * -----------
+ *   假设有 [MW1, MW2, MW3] 三个中间件：
+ *
+ *   请求阶段：
+ *   MW1.before() → MW2.before() → MW3.before() → 核心逻辑
+ *
+ *   响应阶段：
+ *   MW3.after() → MW2.after() → MW1.after() → 返回
+ *
+ * 五、中间件示例
+ * -------------
+ *   public class LoggingMiddleware extends MiddlewareBase {
+ *       @Override
+ *       public Flux<AgentEvent> onAgent(
+ *               Agent agent,
+ *               RuntimeContext ctx,
+ *               AgentInput input,
+ *               Function<AgentInput, Flux<AgentEvent>> next) {
+ *
+ *           log.info("开始执行: {}", input.getUserMessage());
+ *           long start = System.currentTimeMillis();
+ *
+ *           return next.apply(input)  // 调用下一层
+ *               .doOnComplete(() -> {
+ *                   log.info("执行完成，耗时: {}ms",
+ *                       System.currentTimeMillis() - start);
+ *               });
+ *       }
+ *   }
+ *
+ * 六、构建链的方式
+ * ---------------
+ *   Function<AgentInput, Flux<AgentEvent>> chain =
+ *       MiddlewareChain.build(
+ *           middlewares,           // 中间件列表
+ *           agent,                 // 代理实例
+ *           ctx,                   // 运行时上下文
+ *           MiddlewareBase::onAgent, // 拦截点方法
+ *           coreLogic              // 核心逻辑
+ *       );
+ *
+ *   chain.apply(input);  // 执行整个链
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.middleware;
 
 import io.agentscope.core.agent.Agent;

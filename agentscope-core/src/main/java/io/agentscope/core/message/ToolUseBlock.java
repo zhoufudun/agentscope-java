@@ -13,6 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】ToolUseBlock - LLM 的工具调用请求
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * 当 LLM 决定调用一个工具时，它返回一个 ToolUseBlock。
+ * 这是"请求"，不是"结果"。
+ *
+ * 二、工具调用流程
+ * ---------------
+ *   用户: "北京今天天气如何？"
+ *        │
+ *        ▼
+ *   LLM 返回 AssistantMessage {
+ *     content: [
+ *       ToolUseBlock {          ← LLM 说"我要调用这个工具"
+ *         id: "tc_001",
+ *         name: "get_weather",
+ *         input: {"city": "北京"}
+ *       }
+ *     ]
+ *   }
+ *        │
+ *        ▼
+ *   框架执行 get_weather("北京")
+ *        │
+ *        ▼
+ *   返回 ToolResultBlock      ← 工具执行结果
+ *        │
+ *        ▼
+ *   LLM 根据结果生成最终回复
+ *
+ * 三、关键字段
+ * -----------
+ *   id      — 工具调用唯一标识（用于匹配 ToolResultBlock）
+ *   name    — 工具名称（如 "get_weather"）
+ *   input   — 工具参数（Map<String, Object>）
+ *   state   — 调用状态（PENDING, EXECUTING, COMPLETED, DENIED, SUSPENDED）
+ *
+ * 四、状态流转
+ * -----------
+ *   PENDING    → LLM 刚返回请求
+ *   EXECUTING  → 框架开始执行工具
+ *   COMPLETED  → 工具执行完成
+ *   DENIED     → 权限检查拒绝
+ *   SUSPENDED  → 等待外部执行（外部工具）
+ *
+ * 五、与 HITL 的关系
+ * -----------------
+ *   当权限为 ASK 时：
+ *   1. 框架发出 RequireUserConfirmEvent，包含 ToolUseBlock 列表
+ *   2. 用户在 ConfirmResult 中可以修改 ToolUseBlock（如改参数）
+ *   3. 框架用修改后的 ToolUseBlock 执行
+ *
+ *   ToolUseBlock modified = original.builder()
+ *       .input(Map.of("city", "上海"))  // 用户改成上海
+ *       .build();
+ *   new ConfirmResult(true, modified);
+ *
+ * 六、metadata 用途
+ * -----------------
+ *   不同 LLM 提供商可能有特殊元数据：
+ *   - Gemini: thoughtSignature（思考签名）
+ *   - 其他: 可扩展
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

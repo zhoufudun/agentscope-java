@@ -13,6 +13,79 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】ToolExecutor - 工具执行器
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * ToolExecutor 负责执行 LLM 请求的工具调用。
+ * 它处理执行过程中的所有基础设施问题。
+ *
+ * 二、职责
+ * -------
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │  • 单个/批量工具执行                               │
+ *   │  • 并行/串行执行控制                               │
+ *   │  • 超时和重试处理                                  │
+ *   │  • 线程调度                                        │
+ *   │  • Schema 验证                                     │
+ *   │  • 流式进度回调                                    │
+ *   └─────────────────────────────────────────────────────┘
+ *
+ * 三、执行流程
+ * -----------
+ *   LLM 返回 ToolUseBlock
+ *        │
+ *        ▼
+ *   ToolExecutor.execute()
+ *        │
+ *        ├─ 1. 查找工具 (ToolRegistry)
+ *        ├─ 2. 验证参数 (Schema Validation)
+ *        ├─ 3. 检查工具组是否激活
+ *        ├─ 4. 调度到线程池
+ *        ├─ 5. 执行 tool.callAsync()
+ *        ├─ 6. 处理超时/重试
+ *        └─ 7. 返回 ToolResultBlock
+ *
+ * 四、执行模式
+ * -----------
+ *   并行执行（默认）:
+ *   - 多个工具同时执行
+ *   - 适合独立的工具调用
+ *
+ *   串行执行:
+ *   - 工具按顺序执行
+ *   - 适合有依赖关系的调用
+ *
+ *   配置方式:
+ *   ExecutionConfig.builder()
+ *       .parallelExecution(true/false)
+ *       .build();
+ *
+ * 五、线程模型
+ * -----------
+ *   默认: Schedulers.boundedElastic()
+ *        - 适合 I/O 密集型操作
+ *        - 自动扩展线程池
+ *
+ *   自定义: 传入 ExecutorService
+ *        - 精确控制线程
+ *        - 适合特殊场景
+ *
+ * 六、超时和重试
+ * -------------
+ *   ToolkitConfig.builder()
+ *       .timeout(Duration.ofSeconds(30))  // 单个工具超时
+ *       .retryCount(3)                    // 重试次数
+ *       .retryDelay(Duration.ofMillis(500))
+ *       .build();
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.tool;
 
 import io.agentscope.core.agent.Agent;

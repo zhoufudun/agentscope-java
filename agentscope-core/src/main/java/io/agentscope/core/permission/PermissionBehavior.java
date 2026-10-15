@@ -13,6 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】PermissionBehavior - 权限行为枚举
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * PermissionBehavior 定义了权限检查的四种结果。
+ * 它是 HITL（人在回路）系统的核心。
+ *
+ * 二、四种行为
+ * -----------
+ *   ┌──────────────┬─────────────────────────────────────┐
+ *   │ ALLOW        │ 直接允许执行，无需用户确认          │
+ *   │ DENY         │ 直接拒绝执行，不询问用户            │
+ *   │ ASK          │ 暂停执行，询问用户是否允许          │
+ *   │ PASSTHROUGH  │ 工具放弃决策，交给权限引擎          │
+ *   └──────────────┴─────────────────────────────────────┘
+ *
+ * 三、决策流程
+ * -----------
+ *   LLM 决定调用工具
+ *        │
+ *        ▼
+ *   PermissionEngine 检查规则表
+ *        │
+ *        ├─ 匹配 ALLOW 规则 → 直接执行
+ *        ├─ 匹配 DENY 规则  → 直接拒绝
+ *        ├─ 匹配 ASK 规则   → 请求用户确认
+ *        └─ 无匹配规则      ─┬→ 调用 tool.checkPermissions()
+ *                           │
+ *                           ├─ ALLOW → 执行
+ *                           ├─ DENY  → 拒绝
+ *                           ├─ ASK   → 请求用户确认
+ *                           └─ PASSTHROUGH → 使用默认模式
+ *
+ * 四、典型场景
+ * -----------
+ *   工具         │ 典型权限
+ *   ─────────────┼─────────────
+ *   read_file    │ ALLOW（只读，安全）
+ *   write_file   │ ASK（可能覆盖文件）
+ *   execute_bash │ ASK（可能执行危险命令）
+ *   delete_all   │ DENY（太危险）
+ *
+ * 五、配置示例
+ * -----------
+ *   // 在 ReActAgent 中配置权限
+ *   ReActAgent.builder()
+ *       .permissionConfig(PermissionConfig.builder()
+ *           .defaultBehavior(PermissionBehavior.ASK)
+ *           .allowRule("read_file", "*")          // 允许读取任何文件
+ *           .denyRule("write_file", "/etc/*")    // 禁止写入 /etc
+ *           .build())
+ *       .build();
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.permission;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

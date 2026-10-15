@@ -13,6 +13,80 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】ToolResultBlock - 工具执行结果
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * ToolResultBlock 是工具执行后返回给 LLM 的结果。
+ * 与 ToolUseBlock（请求）配对使用。
+ *
+ * 二、两种用途
+ * -----------
+ *   1. 工具方法返回值（id 和 name 为 null）
+ *      @Tool
+ *      public ToolResultBlock myTool(...) {
+ *          return ToolResultBlock.text("结果");
+ *      }
+ *
+ *   2. 消息中的内容块（id 和 name 必须设置）
+ *      ToolMessage {
+ *        content: [
+ *          ToolResultBlock {
+ *            id: "tc_001",        // 匹配 ToolUseBlock.id
+ *            name: "get_weather",
+ *            output: [TextBlock("晴，25°C")]
+ *          }
+ *        ]
+ *      }
+ *
+ * 三、创建方式
+ * -----------
+ *   // 简单文本结果
+ *   ToolResultBlock.text("操作成功");
+ *
+ *   // 错误结果
+ *   ToolResultBlock.error("文件不存在");
+ *
+ *   // 复杂结果（多个内容块）
+ *   ToolResultBlock.of(List.of(
+ *       TextBlock.builder().text("标题").build(),
+ *       TextBlock.builder().text("内容").build()
+ *   ));
+ *
+ *   // 带元数据
+ *   ToolResultBlock.of(
+ *       TextBlock.builder().text("结果").build(),
+ *       Map.of("duration_ms", 100)
+ *   );
+ *
+ * 四、状态
+ * -------
+ *   RUNNING   — 正在执行
+ *   SUCCESS   — 执行成功
+ *   ERROR     — 执行出错
+ *   SUSPENDED — 外部工具，等待外部执行
+ *
+ * 五、挂起（Suspended）结果
+ * ------------------------
+ *   当工具标记为 externalTool=true 时：
+ *   - 框架不执行工具，而是返回 suspended 结果
+ *   - 外部系统执行工具后，通过 agent.supplyExternalResult() 提交结果
+ *
+ *   ToolResultBlock.suspended(toolUseBlock);
+ *
+ * 六、与流式输出的关系
+ * -------------------
+ *   工具执行中：
+ *   - emitter.emit(...)       → ToolResultTextDeltaEvent（前端显示进度）
+ *   - return ToolResultBlock  → 最终结果给 LLM
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

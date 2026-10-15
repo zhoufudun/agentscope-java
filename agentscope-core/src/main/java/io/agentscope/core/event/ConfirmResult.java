@@ -13,6 +13,79 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】用户确认结果 - ConfirmResult
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * 用户对 RequireUserConfirmEvent 中某个工具调用的确认结果。
+ * 每个 ToolUseBlock 对应一个 ConfirmResult。
+ *
+ * 二、三个关键字段
+ * ---------------
+ *   confirmed — 用户是否批准（true=执行, false=跳过）
+ *   toolCall  — 可选的修改后工具调用（用户可以调整参数）
+ *   rules     — 可选的新权限规则（"记住此选择"功能）
+ *
+ * 三、典型使用场景
+ * ---------------
+ *
+ *   场景 1: 简单批准
+ *   ─────────────────
+ *   new ConfirmResult(true, originalToolCall);
+ *   // 用户点击 [允许]，按原样执行
+ *
+ *   场景 2: 简单拒绝
+ *   ─────────────────
+ *   new ConfirmResult(false, originalToolCall);
+ *   // 用户点击 [拒绝]，跳过此工具调用
+ *
+ *   场景 3: 修改参数后执行
+ *   ─────────────────────
+ *   ToolUseBlock modified = originalToolCall.withInput(newArgs);
+ *   new ConfirmResult(true, modified);
+ *   // 用户修改了工具参数（如把删除路径改为移动到回收站）
+ *
+ *   场景 4: 批准并记住
+ *   ───────────────────
+ *   PermissionRule allowRule = PermissionRule.builder()
+ *       .behavior(PermissionBehavior.ALLOW)
+ *       .toolName("delete_file")
+ *       .scope(PermissionScope.SESSION)
+ *       .build();
+ *   new ConfirmResult(true, toolCall, List.of(allowRule));
+ *   // 用户勾选了"本次会话不再询问"
+ *
+ * 四、权限规则的作用域
+ * -------------------
+ *   SESSION  — 仅本次会话有效
+ *   USER     — 该用户永久有效
+ *   GLOBAL   — 所有用户永久有效
+ *
+ * 五、流程图
+ * ----------
+ *   RequireUserConfirmEvent
+ *          │
+ *          ▼ 前端显示对话框
+ *   ┌──────────────────────────────┐
+ *   │  删除文件 /important.txt？   │
+ *   │  ○ 允许                      │
+ *   │  ○ 拒绝                      │
+ *   │  ☐ 本次会话不再询问          │
+ *   │  [确定]                      │
+ *   └──────────────────────────────┘
+ *          │
+ *          ▼ 构造 ConfirmResult
+ *   confirmSink.tryEmitNext(List.of(confirmResult))
+ *          │
+ *          ▼ 代理继续执行
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.event;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

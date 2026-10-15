@@ -13,6 +13,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】UserMessage - 用户消息
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * UserMessage 是用户发送给代理的消息。
+ * 它是 Msg 的便捷子类，角色固定为 USER。
+ *
+ * 二、创建方式
+ * -----------
+ *   // 最简单：纯文本
+ *   Msg msg = new UserMessage("你好");
+ *
+ *   // 带名字
+ *   Msg msg = new UserMessage("Alice", "你好");
+ *
+ *   // 多模态（文字 + 图片）
+ *   Msg msg = new UserMessage(
+ *       TextBlock.builder().text("这是什么？").build(),
+ *       ImageBlock.builder().url("https://...").build()
+ *   );
+ *
+ *   // Builder 方式
+ *   Msg msg = UserMessage.builder()
+ *       .name("Alice")
+ *       .textContent("你好")
+ *       .metadata(Map.of("source", "mobile"))
+ *       .build();
+ *
+ * 三、消息角色
+ * -----------
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │  USER       — 用户消息（UserMessage）              │
+ *   │  ASSISTANT  — 代理回复（AssistantMessage）         │
+ *   │  SYSTEM     — 系统提示（SystemMessage）            │
+ *   │  TOOL       — 工具结果（ToolMessage）              │
+ *   └─────────────────────────────────────────────────────┘
+ *
+ * 四、调用代理
+ * -----------
+ *   // 方式 1: 直接传 UserMessage
+ *   agent.call(new UserMessage("你好")).block();
+ *
+ *   // 方式 2: 传字符串（内部转成 UserMessage）
+ *   agent.call("你好").block();
+ *
+ *   // 方式 3: 流式
+ *   agent.streamEvents(new UserMessage("你好"))
+ *       .doOnNext(event -> { ... })
+ *       .blockLast();
+ *
+ * 五、会话上下文
+ * -------------
+ *   多轮对话的历史存储在 AgentState.context 中：
+ *
+ *   [UserMessage("你好")]
+ *   [AssistantMessage("你好！有什么可以帮你？")]
+ *   [UserMessage("天气如何？")]
+ *   [AssistantMessage(..., ToolUseBlock)]
+ *   [ToolMessage(ToolResultBlock)]
+ *   [AssistantMessage("今天晴天，25°C")]
+ *
+ * 六、允许的内容块
+ * ---------------
+ *   UserMessage 允许：
+ *   ✅ TextBlock     — 文字
+ *   ✅ ImageBlock    — 图片
+ *   ✅ AudioBlock    — 音频
+ *   ✅ VideoBlock    — 视频
+ *   ✅ DataBlock     — 数据
+ *
+ *   不允许：
+ *   ❌ ToolUseBlock  — 只有 LLM 能请求工具
+ *   ❌ ToolResultBlock — 只有工具能返回结果
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

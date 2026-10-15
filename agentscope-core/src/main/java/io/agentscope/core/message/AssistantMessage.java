@@ -13,6 +13,83 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】AssistantMessage - 代理回复消息
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * AssistantMessage 是代理（LLM）生成的回复消息。
+ * 它是 Msg 的便捷子类，角色固定为 ASSISTANT。
+ *
+ * 二、与 UserMessage 的区别
+ * -------------------------
+ *   UserMessage      — 用户发给代理的消息
+ *   AssistantMessage — 代理发给用户的消息
+ *
+ *   ┌─────────────────────────────────────────────────┐
+ *   │  UserMessage("今天天气如何？")                   │
+ *   │          ↓                                     │
+ *   │  AssistantMessage(                             │
+ *   │      ThinkingBlock("需要调用天气工具...")       │
+ *   │      ToolUseBlock("get_weather", {"city":"北京"})│
+ *   │  )                                             │
+ *   │          ↓                                     │
+ *   │  [框架执行工具]                                 │
+ *   │          ↓                                     │
+ *   │  AssistantMessage("北京今天晴，25°C")          │
+ *   └─────────────────────────────────────────────────┘
+ *
+ * 三、允许的内容块
+ * ---------------
+ *   AssistantMessage 允许：
+ *   ✅ TextBlock     — 文字回复
+ *   ✅ ThinkingBlock — 思考过程
+ *   ✅ ToolUseBlock  — 请求调用工具
+ *
+ *   不允许：
+ *   ❌ ToolResultBlock — 这是工具返回的，在 ToolMessage 中
+ *   ❌ ImageBlock 等   — 代理通常不生成图片（除非有专门工具）
+ *
+ * 四、创建方式
+ * -----------
+ *   // 纯文本回复
+ *   new AssistantMessage("你好！");
+ *
+ *   // 带工具调用的回复
+ *   new AssistantMessage(
+ *       ThinkingBlock.builder().thinking("我需要查询天气").build(),
+ *       ToolUseBlock.builder()
+ *           .id("tc_001")
+ *           .name("get_weather")
+ *           .input(Map.of("city", "北京"))
+ *           .build()
+ *   );
+ *
+ *   // Builder 方式
+ *   AssistantMessage.builder()
+ *       .textContent("已为您查询完毕")
+ *       .usage(new ChatUsage(100, 50))
+ *       .build();
+ *
+ * 五、从回复中提取信息
+ * -------------------
+ *   Msg reply = agent.call("你好").block();
+ *
+ *   // 获取文本内容
+ *   String text = reply.getTextContent();
+ *
+ *   // 获取工具调用
+ *   List<ToolUseBlock> toolCalls = reply.getContentBlocks(ToolUseBlock.class);
+ *
+ *   // 获取思考内容
+ *   List<ThinkingBlock> thinking = reply.getContentBlocks(ThinkingBlock.class);
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

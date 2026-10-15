@@ -13,6 +13,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】ToolBase - 高级工具基类
+ * ============================================================================
+ *
+ * 一、什么时候用 ToolBase vs @Tool 注解？
+ * --------------------------------------
+ *   @Tool 注解: 简单工具，只需执行逻辑
+ *   ToolBase:   复杂工具，需要权限检查、规则匹配、建议生成
+ *
+ * 二、ToolBase 提供的能力
+ * ----------------------
+ *   1. 权限自检 (checkPermissions)
+ *      - 在权限引擎决策前先自检
+ *      - 可以根据参数动态返回 ALLOW/ASK/DENY
+ *
+ *   2. 规则匹配 (matchRule)
+ *      - 判断某条权限规则是否适用于当前调用
+ *      - 支持细粒度匹配（如文件路径前缀）
+ *
+ *   3. 建议生成 (generateSuggestions)
+ *      - 当用户批准工具调用时，建议添加哪些规则
+ *      - 如"记住：允许读取 /home/user/ 下的文件"
+ *
+ *   4. 危险路径检测 (isDangerousPath)
+ *      - 检测敏感文件（.env, id_rsa, ...）
+ *      - 检测敏感目录（.git, .ssh, ...）
+ *
+ * 三、创建方式
+ * -----------
+ *   public class MyTool extends ToolBase {
+ *       public MyTool() {
+ *           super(ToolBase.builder()
+ *               .name("my_tool")
+ *               .description("我的工具")
+ *               .inputSchema(Map.of(
+ *                   "type", "object",
+ *                   "properties", Map.of(
+ *                       "path", Map.of("type", "string")
+ *                   )
+ *               ))
+ *               .readOnly(false)
+ *               .build());
+ *       }
+ *
+ *       @Override
+ *       public Mono<ToolResultBlock> callAsync(ToolCallParam param) {
+ *           String path = (String) param.getToolInput().get("path");
+ *           // 执行逻辑
+ *           return Mono.just(ToolResultBlock.text("完成"));
+ *       }
+ *
+ *       @Override
+ *       public Mono<PermissionDecision> checkPermissions(
+ *               Map<String, Object> input, PermissionContextState ctx) {
+ *           String path = (String) input.get("path");
+ *           if (isDangerousPath(path)) {
+ *               return Mono.just(PermissionDecision.ask("my_tool", "敏感路径"));
+ *           }
+ *           return Mono.just(PermissionDecision.passthrough("my_tool"));
+ *       }
+ *   }
+ *
+ * 四、关键属性
+ * -----------
+ *   readOnly        — 只读工具（权限更宽松）
+ *   concurrencySafe — 可并发执行
+ *   externalTool    — 外部执行（框架不调用，交给外部系统）
+ *   stateInjected   — 需要注入 AgentState
+ *   mcp             — MCP 协议工具
+ *
+ * 五、权限决策流程
+ * ---------------
+ *   LLM 决定调用工具
+ *        │
+ *        ▼
+ *   PermissionEngine 检查规则表
+ *        │ 没有明确匹配
+ *        ▼
+ *   调用 tool.checkPermissions()  ← ToolBase 提供
+ *        │
+ *        ├─ ALLOW → 直接执行
+ *        ├─ ASK   → 请求用户确认
+ *        ├─ DENY  → 拒绝执行
+ *        └─ PASSTHROUGH → 继续使用默认模式
+ *
+ * 六、内置的危险路径
+ * -----------------
+ *   dangerousFiles: .env, .npmrc, id_rsa, credentials.json, ...
+ *   dangerousDirectories: .git, .ssh, .gnupg, ...
+ *
+ *   可在子类中覆盖或扩展。
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.tool;
 
 import io.agentscope.core.message.ToolResultBlock;

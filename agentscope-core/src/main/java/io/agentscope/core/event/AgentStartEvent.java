@@ -13,6 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】代理开始事件 - AgentStartEvent
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * 代理开始处理用户请求时触发的第一个事件。
+ * 相当于"开工通知"，告诉前端代理已经收到请求开始工作了。
+ *
+ * 二、事件流完整生命周期
+ * ---------------------
+ *   agent.call("你好")
+ *         │
+ *         ▼
+ *   ┌─────────────────────────────────────────────────┐
+ *   │  AgentStartEvent         ← 代理开始工作         │
+ *   │       │                                         │
+ *   │       ▼                                         │
+ *   │  TextBlockStartEvent     ← 文本块开始           │
+ *   │  TextBlockDeltaEvent     ← 增量文本 "你"        │
+ *   │  TextBlockDeltaEvent     ← 增量文本 "好"        │
+ *   │  TextBlockEndEvent       ← 文本块结束           │
+ *   │       │                                         │
+ *   │       ▼ (如果有工具调用)                        │
+ *   │  ToolCallStartEvent      ← 工具开始             │
+ *   │  ToolCallEndEvent        ← 工具结束             │
+ *   │       │                                         │
+ *   │       ▼                                         │
+ *   │  AgentResultEvent        ← 最终结果             │
+ *   │  AgentEndEvent           ← 代理结束工作         │
+ *   └─────────────────────────────────────────────────┘
+ *
+ * 三、关键字段
+ * -----------
+ *   sessionId — 会话标识（多轮对话共享同一 sessionId）
+ *   replyId   — 本次回复标识（每次 call() 生成新的 replyId）
+ *   name      — 代理名称（如 "assistant", "coding-agent"）
+ *   role      — 角色（通常是 "assistant"）
+ *
+ * 四、使用示例
+ * -----------
+ *   agent.streamEvents(userMsg)
+ *       .doOnNext(event -> {
+ *           if (event instanceof AgentStartEvent e) {
+ *               System.out.println("🤖 " + e.getName() + " 开始处理...");
+ *               // 前端可以显示 loading 动画
+ *           }
+ *       })
+ *       .blockLast();
+ *
+ * 五、sessionId vs replyId
+ * ------------------------
+ *   sessionId: 整个会话的标识，多轮对话共享
+ *     call("你好")     → sessionId = "s1", replyId = "r1"
+ *     call("天气如何") → sessionId = "s1", replyId = "r2"
+ *     call("谢谢")     → sessionId = "s1", replyId = "r3"
+ *
+ *   replyId: 单次回复的标识，用于关联同一回复的所有事件
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.event;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

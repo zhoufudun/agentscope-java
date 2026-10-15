@@ -13,6 +13,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】ThinkingBlock - LLM 思考过程
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * ThinkingBlock 记录 LLM 的内部思考过程。
+ * 它让代理的决策过程变得透明可见。
+ *
+ * 二、为什么需要？
+ * ---------------
+ * 现代 LLM（如 Claude）支持"Extended Thinking"（扩展思考）。
+ * LLM 会先思考，再给出答案，这提高了复杂问题的解决能力。
+ *
+ *   没有思考:
+ *   Q: "1+1=?" → A: "2"
+ *
+ *   有思考:
+ *   Q: "1+1=?"
+ *   Thinking: "这是一个简单的加法运算，1+1=2"
+ *   A: "2"
+ *
+ * 三、在 ReAct 循环中的作用
+ * ------------------------
+ *   ┌─────────────────────────────────────────────────┐
+ *   │  用户: "北京天气如何？"                          │
+ *   │          ↓                                     │
+ *   │  LLM 回复:                                      │
+ *   │    ThinkingBlock("用户问天气，我需要调用       │
+ *   │                   get_weather 工具查询北京")   │
+ *   │    ToolUseBlock("get_weather", {"city":"北京"})│
+ *   │          ↓                                     │
+ *   │  [执行工具，获取结果]                           │
+ *   │          ↓                                     │
+ *   │  LLM 回复:                                      │
+ *   │    ThinkingBlock("工具返回了天气数据，         │
+ *   │                   我来整理给用户")             │
+ *   │    TextBlock("北京今天晴天，气温25°C")         │
+ *   └─────────────────────────────────────────────────┘
+ *
+ * 四、创建方式
+ * -----------
+ *   ThinkingBlock block = ThinkingBlock.builder()
+ *       .thinking("我正在分析用户的问题...")
+ *       .build();
+ *
+ * 五、流式输出
+ * -----------
+ *   思考过程可以流式输出：
+ *   - ThinkingBlockStartEvent  — 开始思考
+ *   - ThinkingBlockDeltaEvent  — 思考内容增量
+ *   - ThinkingBlockEndEvent    — 思考结束
+ *
+ *   这让用户可以实时看到 LLM "在想什么"。
+ *
+ * 六、metadata 用途
+ * -----------------
+ *   不同 LLM 提供商有特殊的推理详情：
+ *   - OpenRouter: reasoning_details
+ *   - Gemini: reasoningDetails
+ *
+ *   这些信息存在 metadata 中，框架需要在后续调用中传回。
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

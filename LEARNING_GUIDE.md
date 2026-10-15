@@ -202,17 +202,65 @@ agent.streamEvents("Summarize today.", ctx)
 
 ### 7.1 核心模块 (agentscope-core)
 
+#### 核心引擎与状态
 | 文件 | 说明 |
 |-----|------|
 | `agentscope-core/.../ReActAgent.java` | 核心推理引擎 |
-| `agentscope-core/.../middleware/MiddlewareBase.java` | 中间件基类 |
 | `agentscope-core/.../state/AgentState.java` | 会话状态 |
-| `agentscope-core/.../tool/Toolkit.java` | 工具管理 |
-| `agentscope-core/.../message/Msg.java` | 消息模型 |
-| `agentscope-core/.../event/AgentEvent.java` | 事件系统 |
-| `agentscope-core/.../permission/PermissionEngine.java` | 权限引擎 |
-| `agentscope-core/.../model/Model.java` | 模型抽象 |
 | `agentscope-core/.../agent/RuntimeContext.java` | 运行时上下文 |
+
+#### 消息系统 (message/)
+| 文件 | 说明 |
+|-----|------|
+| `Msg.java` | 消息基类，多模态内容块 |
+| `ContentBlock.java` | 内容块密封基类（9 种类型）|
+| `TextBlock.java` | 纯文本内容块 |
+| `UserMessage.java` | 用户消息（角色固定 USER）|
+| `AssistantMessage.java` | 代理回复（角色固定 ASSISTANT）|
+| `ThinkingBlock.java` | LLM 思考过程 |
+| `ToolUseBlock.java` | LLM 工具调用请求 |
+| `ToolResultBlock.java` | 工具执行结果 |
+
+#### 事件系统 (event/)
+| 文件 | 说明 |
+|-----|------|
+| `AgentEvent.java` | 事件基类（28 种类型）|
+| `AgentStartEvent.java` | 代理启动事件 |
+| `AgentResultEvent.java` | 代理结果事件 |
+| `TextBlockDeltaEvent.java` | 流式文本增量 |
+| `ToolCallStartEvent.java` | 工具调用开始 |
+| `ToolCallEndEvent.java` | 工具调用结束 |
+| `RequireUserConfirmEvent.java` | HITL 确认请求 |
+| `ConfirmResult.java` | 用户确认结果 |
+| `RequestStopEvent.java` | 请求停止事件 |
+
+#### 工具系统 (tool/)
+| 文件 | 说明 |
+|-----|------|
+| `Toolkit.java` | 工具箱管理器 |
+| `Tool.java` | @Tool 注解（声明式工具）|
+| `ToolParam.java` | @ToolParam 参数注解 |
+| `AgentTool.java` | 工具接口（编程式工具）|
+| `ToolBase.java` | 高级工具基类（权限检查）|
+| `ToolEmitter.java` | 流式进度发射器 |
+| `ToolExecutor.java` | 工具执行器 |
+
+#### 中间件系统 (middleware/)
+| 文件 | 说明 |
+|-----|------|
+| `MiddlewareBase.java` | 中间件基类（5 个拦截点）|
+| `MiddlewareChain.java` | 洋葱模型链构建器 |
+
+#### 权限系统 (permission/)
+| 文件 | 说明 |
+|-----|------|
+| `PermissionEngine.java` | 权限引擎 |
+| `PermissionBehavior.java` | 权限行为枚举（ALLOW/ASK/DENY）|
+
+#### 模型抽象 (model/)
+| 文件 | 说明 |
+|-----|------|
+| `Model.java` | LLM 模型抽象接口 |
 
 ### 7.2 生产级封装 (agentscope-harness)
 

@@ -13,6 +13,80 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】TextBlock - 纯文本内容块
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * TextBlock 是最基础的内容块，包含纯文本内容。
+ * 它是消息的"原子"单位之一。
+ *
+ * 二、消息结构
+ * -----------
+ *   一条消息（Msg）包含多个内容块（ContentBlock）：
+ *
+ *   Msg {
+ *     role: USER / ASSISTANT / SYSTEM / TOOL
+ *     content: [
+ *       TextBlock("你好"),           ← 文本块
+ *       ImageBlock(...),             ← 图片块
+ *       ToolUseBlock(...),           ← 工具调用块
+ *       ...
+ *     ]
+ *   }
+ *
+ * 三、内容块类型
+ * -------------
+ *   ┌────────────────────────────────────────────────────┐
+ *   │  TextBlock      — 纯文本                          │
+ *   │  ImageBlock     — 图片（Base64 或 URL）           │
+ *   │  AudioBlock     — 音频                            │
+ *   │  VideoBlock     — 视频                            │
+ *   │  ToolUseBlock   — LLM 请求调用工具                 │
+ *   │  ToolResultBlock — 工具执行结果                   │
+ *   │  ThinkingBlock  — LLM 思考过程                    │
+ *   └────────────────────────────────────────────────────┘
+ *
+ * 四、创建方式
+ * -----------
+ *   // 方式 1: Builder
+ *   TextBlock block = TextBlock.builder()
+ *       .text("Hello, world!")
+ *       .build();
+ *
+ *   // 方式 2: 直接用 UserMessage
+ *   Msg msg = new UserMessage("Hello, world!");
+ *   // 内部自动创建 TextBlock
+ *
+ * 五、从消息获取文本
+ * -----------------
+ *   Msg msg = agent.call("你好").block();
+ *
+ *   // 方式 1: 直接获取合并文本
+ *   String text = msg.getTextContent();
+ *
+ *   // 方式 2: 遍历内容块
+ *   for (ContentBlock block : msg.getContent()) {
+ *       if (block instanceof TextBlock tb) {
+ *           System.out.println(tb.getText());
+ *       }
+ *   }
+ *
+ * 六、流式场景
+ * -----------
+ *   TextBlock 对应的事件：
+ *   - TextBlockStartEvent  — 文本块开始
+ *   - TextBlockDeltaEvent  — 增量文本（多次）
+ *   - TextBlockEndEvent    — 文本块结束
+ *
+ *   最终的 TextBlock 是所有 delta 拼接的结果。
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

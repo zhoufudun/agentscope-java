@@ -13,6 +13,91 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * ============================================================================
+ * 【核心概念】@Tool 注解 - 将普通方法变成 AI 可调用的工具
+ * ============================================================================
+ *
+ * 一、这是什么？
+ * -------------
+ * @Tool 注解标记一个 Java 方法，让 LLM 能够理解并调用它。
+ * 这是框架最重要的注解之一，是人机协作的桥梁。
+ *
+ * 二、基本用法
+ * -----------
+ *   @Tool(name = "get_weather", description = "获取城市天气")
+ *   public String getWeather(
+ *       @ToolParam(name = "city", description = "城市名") String city) {
+ *       return callWeatherApi(city);
+ *   }
+ *
+ * 三、工作原理
+ * -----------
+ *   1. 框架扫描 @Tool 注解，生成 JSON Schema
+ *   2. Schema 发送给 LLM，告诉它有哪些工具可用
+ *   3. LLM 决定调用工具时，框架解析参数并调用 Java 方法
+ *   4. 方法返回值作为工具结果返回给 LLM
+ *
+ *   ┌─────────────────────────────────────────────────────────────┐
+ *   │  @Tool 注解                                                 │
+ *   │      │                                                      │
+ *   │      ▼ Toolkit 扫描                                         │
+ *   │  ┌───────────────────────────────┐                         │
+ *   │  │  JSON Schema:                 │                         │
+ *   │  │  {                            │                         │
+ *   │  │    "name": "get_weather",     │ ─────► 发送给 LLM        │
+ *   │  │    "description": "...",      │                         │
+ *   │  │    "parameters": {...}        │                         │
+ *   │  │  }                            │                         │
+ *   │  └───────────────────────────────┘                         │
+ *   │      ▲                                                      │
+ *   │      │ LLM 返回工具调用                                      │
+ *   │      ▼                                                      │
+ *   │  框架调用 Java 方法，结果返回给 LLM                          │
+ *   └─────────────────────────────────────────────────────────────┘
+ *
+ * 四、核心属性
+ * -----------
+ *   name        — 工具名称（推荐 snake_case）
+ *   description — 工具描述（帮助 LLM 决定何时使用）
+ *   readOnly    — 是否只读（只读工具权限检查更宽松）
+ *   strict      — 是否启用严格 Schema 模式
+ *   converter   — 自定义结果转换器
+ *
+ * 五、命名规范
+ * -----------
+ *   ✅ 推荐: get_weather, send_email, calculate_area
+ *   ❌ 不推荐: getWeather, SendEmail, CalculateArea
+ *
+ *   原因: 大多数 LLM 训练数据使用 snake_case
+ *
+ * 六、方法签名要求
+ * ---------------
+ *   - 所有业务参数必须有 @ToolParam 注解
+ *   - ToolEmitter 参数不需要注解（框架自动注入）
+ *   - 返回类型: String, ToolResultBlock, Mono<...>
+ *
+ * 七、完整示例
+ * -----------
+ *   @Tool(
+ *       name = "search_database",
+ *       description = "搜索数据库记录",
+ *       readOnly = true,
+ *       converter = MaskingSensitiveDataConverter.class
+ *   )
+ *   public List<Record> search(
+ *       @ToolParam(name = "query", description = "搜索关键词") String query,
+ *       @ToolParam(name = "limit", description = "最大结果数", required = false) Integer limit,
+ *       ToolEmitter emitter  // 用于发送进度更新
+ *   ) {
+ *       emitter.emit(ToolResultBlock.text("正在搜索..."));
+ *       return database.search(query, limit);
+ *   }
+ *
+ * ============================================================================
+ */
+
 package io.agentscope.core.tool;
 
 import java.lang.annotation.Documented;
